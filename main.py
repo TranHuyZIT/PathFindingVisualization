@@ -4,13 +4,7 @@ from queue import PriorityQueue
 from queue import Queue
 from queue import LifoQueue
 
-WIDTH = 665
-ROWS = 35
-WIN = pygame.display.set_mode((WIDTH + 200, WIDTH))
-pygame.init()
-pygame.display.set_caption("Path Finding Algorithm")
-
-
+# Colors RGB:
 RED = (255, 0, 0)
 PINK = (245, 66, 138)
 GREEN = (0, 255, 0)
@@ -27,6 +21,15 @@ LIGHTGREY = (230, 227, 227)
 TURQUOISE = (64, 224, 208)
 BLUE = (43, 63, 240)
 LIGHTBLUE = (0,181,236)
+
+# Init Pygame:
+WIDTH = 665
+ROWS = 35
+WIN = pygame.display.set_mode((WIDTH + 200, WIDTH))
+pygame.init()
+pygame.display.set_caption("Path Finding Algorithm")
+
+# Classes:
 class Cell:
     def __init__(self,row,col,width,total_rows):
         self.row = row
@@ -121,7 +124,7 @@ class Button:
 
         return False
 
-
+# BOARD UTILS:
 def make_board(rows, total_width):
     board = []
     width = total_width // rows  # Width of one cell
@@ -141,7 +144,6 @@ def draw_grid(win, rows, total_width):
         pygame.draw.line(win,BLACK,(0,i * width),(total_width, i * width))
         for j in range(rows + 1):
             pygame.draw.line(win, BLACK, (j * width , 0), (j * width ,total_width))
-
 
 def draw(win, board, rows, total_width):
     win.fill(WHITE)
@@ -166,6 +168,24 @@ def draw(win, board, rows, total_width):
     draw_grid(win,rows,total_width)
     pygame.display.update()
 
+def clear(board):
+    for row in board:
+        for cell in row:
+            if not (cell.is_barrier() or cell.is_start() or cell.is_end()):
+                cell.reset()
+
+def show_path(board):
+    for row in board:
+        for cell in row:
+            if not (cell.is_barrier() or cell.is_start() or cell.is_end() or cell.is_path()):
+                cell.reset()
+
+def random_obs(board):
+    clear(board)
+    for i in range(int(ROWS ** 2 * 0.3)):
+        row = random.randint(0,ROWS - 1)
+        col = random.randint(0,ROWS-1)
+        board[row][col].make_barrier()
 
 def get_clicked_pos(pos, rows, width):
     gap = width // rows
@@ -174,12 +194,6 @@ def get_clicked_pos(pos, rows, width):
     row = y // gap
     col = x // gap
     return row, col
-
-
-def h(p1, p2):
-    r1,c1 = p1
-    r2,c2 = p2
-    return abs(r1-r2) + abs(c1 - c2)
 
 def reconstruct_path(came_from,start, end,board):
     current = end
@@ -190,8 +204,9 @@ def reconstruct_path(came_from,start, end,board):
 
         draw(WIN,board,ROWS,WIDTH)
         pygame.time.wait(5)
+# ************************
 
-
+# A*
 def AStar(board, start, end):
     count = 0
     open_set = PriorityQueue()
@@ -229,7 +244,14 @@ def AStar(board, start, end):
 
     return False
 
+def h(p1, p2):
+    r1,c1 = p1
+    r2,c2 = p2
+    return abs(r1-r2) + abs(c1 - c2)
 
+# END A*
+
+# BFS
 def BFS(board,start,end):
     queue = Queue()
     queue.put(start)
@@ -251,37 +273,9 @@ def BFS(board,start,end):
                     neighbour.make_open()
         draw(WIN,board,ROWS,WIDTH)
     return False
+# END BFS
 
-
-def DFS(board,start,end):
-    stack = LifoQueue()
-    came_from = {}
-    stack.put(start)
-    visited = {start}
-    while not stack.empty():
-        current = stack.get()
-        if current == end:
-            reconstruct_path(came_from,start,end,board)
-            return True
-        if current != start:
-            current.make_closed()
-        for neighbour in current.neighbour:
-            if neighbour not in visited:
-                stack.put(neighbour)
-                visited.add(neighbour)
-                came_from[neighbour] = current
-                if neighbour != end:
-                    neighbour.make_open()
-
-        draw(WIN,board,ROWS,WIDTH)
-    return False
-
-
-def sort_set_by_distance(set):
-    set = sorted(set,key= lambda x: x.distance)
-    return set
-
-
+# DIJKSTRA
 def dijkstra(board,start,end):
     if (not start) or (not end):
         return False
@@ -306,27 +300,37 @@ def dijkstra(board,start,end):
                     neighbour.make_open()
         draw(WIN,board,ROWS,WIDTH)
 
+def sort_set_by_distance(set):
+    set = sorted(set,key= lambda x: x.distance)
+    return set
+# END DIJKSTRA
 
-def clear(board):
-    for row in board:
-        for cell in row:
-            if not (cell.is_barrier() or cell.is_start() or cell.is_end()):
-                cell.reset()
+# DFS
+def DFS(board,start,end):
+    stack = LifoQueue()
+    came_from = {}
+    stack.put(start)
+    visited = {start}
+    while not stack.empty():
+        current = stack.get()
+        if current == end:
+            reconstruct_path(came_from,start,end,board)
+            return True
+        if current != start:
+            current.make_closed()
+        for neighbour in current.neighbour:
+            if neighbour not in visited:
+                stack.put(neighbour)
+                visited.add(neighbour)
+                came_from[neighbour] = current
+                if neighbour != end:
+                    neighbour.make_open()
 
+        draw(WIN,board,ROWS,WIDTH)
+    return False
+# END DFS
 
-def show_path(board):
-    for row in board:
-        for cell in row:
-            if not (cell.is_barrier() or cell.is_start() or cell.is_end() or cell.is_path()):
-                cell.reset()
-
-
-def random_obs(board):
-        for i in range(int(ROWS ** 2 * 0.3)):
-            row = random.randint(0,ROWS - 1)
-            col = random.randint(0,ROWS-1)
-            board[row][col].make_barrier()
-# Making buttons
+# MAKING BUTTONS: 
 y = 100
 gap = 70
 height = 40
@@ -345,8 +349,9 @@ y += gap
 Random_Button = Button(RED, WIDTH + 40, y, 120, height, "Random")
 y += gap
 Exit_Button = Button(RED, WIDTH + 40, y, 120, height, "Exit")
+# END MAKING BUTTONS
 
-
+# Main Function
 def main():
     board = []
     board = make_board(ROWS, WIDTH)
@@ -459,9 +464,12 @@ def main():
                 if cell == end:
                     end = None
     pygame.quit()
+# END MAIN
 
+# Run program:
+if __name__ == '__main__':
+    main()
 
-main()
 
 
 
